@@ -89,7 +89,7 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({ open, o
                     {transaction.bankDetails && (
                         <>
                             <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between' }}>
-                                <Typography variant="body2" color="text.secondary">Account Holder:</Typography>
+                                <Typography variant="body2" color="text.secondary">Beneficiary Name:</Typography>
                                 <Typography variant="body2" fontWeight="medium">
                                     {transaction.bankDetails.accountHolderName || transaction.bankDetails.accountHolder || 'N/A'}
                                 </Typography>

@@ -66,7 +66,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ open, onClose, onQuoteReceived 
                     onClick={handleGetQuote}
                     disabled={loading || amount <= 0}
                     endIcon={loading ? <CircularProgress size={20} /> : <ArrowForward />}
-                    sx={{ py: 1.5 }}
+                    sx={{ py: 1.5, bgcolor: '#1DB88E', '&:hover': { bgcolor: '#17A179' } }}
                 >
                     {loading ? 'Loading...' : 'Get Quote'}
                 </Button>

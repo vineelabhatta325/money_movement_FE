@@ -18,8 +18,27 @@ export const createTransaction = async (quoteId: string, senderId: string, bankD
     return response.data;
 };
 
-export const getTransactions = async (page?: number, limit?: number) => {
-    const params = page && limit ? { page, limit } : {};
+export const getTransactions = async (
+    page?: number,
+    limit?: number,
+    searchId?: string,
+    startDate?: string,
+    endDate?: string,
+    status?: string
+) => {
+    const params: any = {};
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    if (searchId) params.searchId = searchId.trim();
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (status) params.status = status;
+
     const response = await axios.get(`${API_BASE_URL}/transactions`, { params });
+    return response.data;
+};
+
+export const getBeneficiaries = async () => {
+    const response = await axios.get(`${API_BASE_URL}/beneficiaries`);
     return response.data;
 };

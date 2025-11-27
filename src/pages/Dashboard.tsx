@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, Stack } from '@mui/material';
+import { Box, Typography, Button, Stack, Snackbar, Alert } from '@mui/material';
 import { Add, AccountBalance, Receipt } from '@mui/icons-material';
 import StatsCard from '../components/StatsCard';
 import TransactionTable from '../components/TransactionTable';
@@ -20,14 +20,32 @@ const Dashboard: React.FC = () => {
     const [totalCount, setTotalCount] = useState(0);
     const limit = 10;
 
-    useEffect(() => {
-        fetchDashboardData();
-    }, [refreshKey, page]);
+    const getCurrentDate = () => {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    };
 
-    const fetchDashboardData = async () => {
+    const [searchId, setSearchId] = useState('');
+    const [debouncedSearchId, setDebouncedSearchId] = useState('');
+    const [startDate, setStartDate] = useState(getCurrentDate());
+    const [endDate, setEndDate] = useState(getCurrentDate());
+    const [status, setStatus] = useState('');
+
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchId(searchId);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchId]);
+
+    const fetchDashboardData = React.useCallback(async () => {
         setLoading(true);
         try {
-            const data = await getTransactions(page, limit);
+            const data = await getTransactions(page, limit, debouncedSearchId, startDate, endDate, status);
             if (data.transactions) {
                 setTransactions(data.transactions);
                 setTreasuryBalance(data.treasuryBalance || 0);
@@ -49,7 +67,11 @@ const Dashboard: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, debouncedSearchId, startDate, endDate, status]);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [fetchDashboardData, refreshKey]);
 
     const handleQuoteReceived = (quote: any) => {
         setCurrentQuote(quote);
@@ -60,6 +82,36 @@ const Dashboard: React.FC = () => {
     const handleTransactionSuccess = () => {
         setRefreshKey(prev => prev + 1);
         setCurrentQuote(null);
+        setSnackbarMessage('Transaction created successfully!');
+        setSnackbarOpen(true);
+    };
+
+    const handleSearchIdChange = (value: string) => {
+        setSearchId(value);
+        setPage(1);
+    };
+
+    const handleStartDateChange = (value: string) => {
+        setStartDate(value);
+        setPage(1);
+    };
+
+    const handleEndDateChange = (value: string) => {
+        setEndDate(value);
+        setPage(1);
+    };
+
+    const handleStatusChange = (value: string) => {
+        setStatus(value);
+        setPage(1);
+    };
+
+    const handleClearFilters = () => {
+        setSearchId('');
+        setStartDate(getCurrentDate());
+        setEndDate(getCurrentDate());
+        setStatus('');
+        setPage(1);
     };
 
     const handleBack = () => {
@@ -83,7 +135,7 @@ const Dashboard: React.FC = () => {
         <Box sx={{ bgcolor: '#F3F4F6', minHeight: '100vh' }}>
             <Box sx={{ bgcolor: 'white', px: 4, py: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E5E7EB' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ color: '#6366F1' }}>
+                    <Box sx={{ color: '#1DB88E' }}>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
                         </svg>
@@ -97,7 +149,7 @@ const Dashboard: React.FC = () => {
                     variant="contained"
                     startIcon={<Add />}
                     onClick={handleNewTransaction}
-                    sx={{ bgcolor: '#6366F1', '&:hover': { bgcolor: '#4F46E5' } }}
+                    sx={{ bgcolor: '#1DB88E', '&:hover': { bgcolor: '#17A179' } }}
                 >
                     New Transaction
                 </Button>
@@ -132,6 +184,15 @@ const Dashboard: React.FC = () => {
                         totalCount={totalCount}
                         limit={limit}
                         onPageChange={(newPage) => setPage(newPage)}
+                        searchId={searchId}
+                        startDate={startDate}
+                        endDate={endDate}
+                        status={status}
+                        onSearchIdChange={handleSearchIdChange}
+                        onStartDateChange={handleStartDateChange}
+                        onEndDateChange={handleEndDateChange}
+                        onStatusChange={handleStatusChange}
+                        onClearFilters={handleClearFilters}
                     />
                 </Box>
             </Box>
@@ -147,6 +208,20 @@ const Dashboard: React.FC = () => {
                 onSuccess={handleTransactionSuccess}
                 onBack={handleBack}
             />
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={4000}
+                onClose={() => setSnackbarOpen(false)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            >
+                <Alert
+                    onClose={() => setSnackbarOpen(false)}
+                    severity="success"
+                    sx={{ width: '100%' }}
+                >
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

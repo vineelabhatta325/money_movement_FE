@@ -13,9 +13,18 @@ import {
     Box,
     Typography,
     TablePagination,
-    Backdrop
+    Backdrop,
+    TextField,
+    Select,
+    MenuItem,
+    Button,
+    FormControl,
+    InputLabel,
+    Stack
 } from '@mui/material';
-import { ArrowForward } from '@mui/icons-material';
+import { Visibility, Search, Clear } from '@mui/icons-material';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 import TransactionDetailModal from './TransactionDetailModal';
 
 interface TransactionTableProps {
@@ -25,6 +34,15 @@ interface TransactionTableProps {
     totalCount: number;
     limit: number;
     onPageChange: (page: number) => void;
+    searchId: string;
+    startDate: string;
+    endDate: string;
+    status: string;
+    onSearchIdChange: (value: string) => void;
+    onStartDateChange: (value: string) => void;
+    onEndDateChange: (value: string) => void;
+    onStatusChange: (value: string) => void;
+    onClearFilters: () => void;
 }
 
 const TransactionTable: React.FC<TransactionTableProps> = ({
@@ -33,7 +51,16 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
     page,
     totalCount,
     limit,
-    onPageChange
+    onPageChange,
+    searchId,
+    startDate,
+    endDate,
+    status,
+    onSearchIdChange,
+    onStartDateChange,
+    onEndDateChange,
+    onStatusChange,
+    onClearFilters
 }) => {
     const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
     const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -76,10 +103,102 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
 
     return (
         <>
-            <TableContainer component={Paper} sx={{ boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <Paper sx={{
+                p: 3,
+                mb: 3,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                border: '1px solid #E5E7EB',
+                borderRadius: 2,
+                background: 'linear-gradient(to bottom, #ffffff, #fafafa)'
+            }}>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+                    <Box sx={{ width: 300 }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Search Transaction ID"
+                            value={searchId}
+                            onChange={(e) => onSearchIdChange(e.target.value)}
+                            InputProps={{
+                                startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    backgroundColor: 'white'
+                                }
+                            }}
+                        />
+                    </Box>
+                    <Box sx={{ minWidth: 250 }}>
+                        <DatePicker
+                            selectsRange={true}
+                            startDate={startDate && !isNaN(new Date(startDate).getTime()) ? new Date(startDate) : null}
+                            endDate={endDate && !isNaN(new Date(endDate).getTime()) ? new Date(endDate) : null}
+                            onChange={(update: [Date | null, Date | null]) => {
+                                const [start, end] = update;
+                                onStartDateChange(start ? start.toISOString().split('T')[0] : '');
+                                onEndDateChange(end ? end.toISOString().split('T')[0] : '');
+                            }}
+                            isClearable={true}
+                            customInput={
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    label="Date Range"
+                                    InputProps={{
+                                        readOnly: true
+                                    }}
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            backgroundColor: 'white'
+                                        }
+                                    }}
+                                />
+                            }
+                        />
+                    </Box>
+                    <Box sx={{ minWidth: 150 }}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Status</InputLabel>
+                            <Select
+                                value={status || ''}
+                                label="Status"
+                                onChange={(e) => onStatusChange(e.target.value)}
+                                renderValue={(selected) => {
+                                    if (!selected || selected === '') {
+                                        return 'All';
+                                    }
+                                    return selected === 'PENDING' ? 'Pending' : 'Completed';
+                                }}
+                                sx={{
+                                    backgroundColor: 'white'
+                                }}
+                            >
+                                <MenuItem value="">All</MenuItem>
+                                <MenuItem value="PENDING">Pending</MenuItem>
+                                <MenuItem value="COMPLETED">Completed</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </Stack>
+            </Paper>
+
+            <TableContainer component={Paper} sx={{
+                boxShadow: '0 2px 8px rgba(79, 31, 31, 0.08)',
+                border: '1px solid #E5E7EB',
+                borderRadius: 2,
+                overflow: 'hidden'
+            }}>
                 <Table>
                     <TableHead>
-                        <TableRow>
+                        <TableRow sx={{
+                            backgroundColor: '#F9FAFB',
+                            '& .MuiTableCell-head': {
+                                fontWeight: 600,
+                                color: '#374151',
+                                borderBottom: '2px solid #E5E7EB'
+                            }
+                        }}>
                             <TableCell>Status</TableCell>
                             <TableCell>Transaction ID</TableCell>
                             <TableCell>Date</TableCell>
@@ -127,9 +246,9 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                                         <IconButton
                                             size="small"
                                             onClick={() => handleViewDetails(tx)}
-                                            sx={{ color: '#6366F1' }}
+                                            sx={{ color: '#1DB88E' }}
                                         >
-                                            <ArrowForward fontSize="small" />
+                                            <Visibility fontSize="small" />
                                         </IconButton>
                                     </TableCell>
                                 </TableRow>

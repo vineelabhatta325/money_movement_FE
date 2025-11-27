@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, IconButton, Typography, Box, Alert, CircularProgress, Divider } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, IconButton, Typography, Box, Alert, CircularProgress, Divider, Autocomplete } from '@mui/material';
 import { Close } from '@mui/icons-material';
-import { createTransaction } from '../services/api';
+import { createTransaction, getBeneficiaries } from '../services/api';
 
 interface TransactionModalProps {
     open: boolean;
@@ -18,6 +18,38 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ open, onClose, quot
     const [ifscCode, setIfscCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [beneficiaries, setBeneficiaries] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (open) {
+            fetchBeneficiaries();
+        }
+    }, [open]);
+
+    const fetchBeneficiaries = async () => {
+        try {
+            const data = await getBeneficiaries();
+            setBeneficiaries(data);
+        } catch (err) {
+            console.error('Failed to fetch beneficiaries', err);
+        }
+    };
+
+    const handleBeneficiarySelect = (event: any, newValue: any) => {
+        if (newValue) {
+            setRecipientName(newValue.accountHolderName || newValue.accountHolder || '');
+            setAccountNumber(newValue.accountNumber || '');
+            setIfscCode(newValue.ifscCode || newValue.ifsc || '');
+        } else {
+            setRecipientName('');
+            setAccountNumber('');
+            setIfscCode('');
+        }
+    };
+
+    const handleInputChange = (event: any, newInputValue: string) => {
+        setRecipientName(newInputValue);
+    };
 
     const handleSubmit = async () => {
         if (!senderId || !recipientName || !accountNumber || !ifscCode) {
@@ -97,16 +129,47 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ open, onClose, quot
                     margin="normal"
                     placeholder="Your Sender ID"
                 />
-                <TextField
-                    label="Recipient Name"
-                    value={recipientName}
-                    onChange={(e) => setRecipientName(e.target.value)}
-                    fullWidth
-                    margin="normal"
-                    placeholder="e.g., John Doe"
+
+                <Autocomplete
+                    freeSolo
+                    options={beneficiaries}
+                    getOptionLabel={(option) => {
+                        if (typeof option === 'string') {
+                            return option;
+                        }
+                        return option.accountHolderName || option.accountHolder || '';
+                    }}
+                    renderOption={(props, option) => {
+                        const { key, ...otherProps } = props;
+                        return (
+                            <li key={key} {...otherProps}>
+                                <Box>
+                                    <Typography variant="body1">
+                                        {option.accountHolderName || option.accountHolder}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Acc: {option.accountNumber} • IFSC: {option.ifscCode || option.ifsc}
+                                    </Typography>
+                                </Box>
+                            </li>
+                        );
+                    }}
+                    onChange={handleBeneficiarySelect}
+                    onInputChange={handleInputChange}
+                    inputValue={recipientName}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label="Beneficiary Name"
+                            margin="normal"
+                            placeholder="Select existing or type new"
+                            fullWidth
+                        />
+                    )}
                 />
+
                 <TextField
-                    label="Recipient Account Number"
+                    label="Beneficiary Account Number"
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value)}
                     fullWidth
@@ -132,7 +195,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ open, onClose, quot
                     variant="contained"
                     onClick={handleSubmit}
                     disabled={loading}
-                    sx={{ flex: 1 }}
+                    sx={{ flex: 1, bgcolor: '#1DB88E', '&:hover': { bgcolor: '#17A179' } }}
                 >
                     {loading ? <CircularProgress size={24} /> : 'Create Transaction'}
                 </Button>
