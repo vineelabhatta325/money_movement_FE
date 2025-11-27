@@ -4,6 +4,8 @@ import { Add, AccountBalance, Receipt } from '@mui/icons-material';
 import StatsCard from '../components/StatsCard';
 import TransactionTable from '../components/TransactionTable';
 import { getTransactions } from '../services/api';
+import QuoteModal from '../components/QuoteModal';
+import TransactionModal from '../components/TransactionModal';
 
 const Dashboard: React.FC = () => {
     const [quoteModalOpen, setQuoteModalOpen] = useState(false);
@@ -11,23 +13,41 @@ const Dashboard: React.FC = () => {
     const [currentQuote, setCurrentQuote] = useState<any>(null);
     const [transactionCount, setTransactionCount] = useState(0);
     const [treasuryBalance, setTreasuryBalance] = useState(0);
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [page, setPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const limit = 10;
 
     useEffect(() => {
         fetchDashboardData();
-    }, [refreshKey]);
+    }, [refreshKey, page]);
 
     const fetchDashboardData = async () => {
+        setLoading(true);
         try {
-            const data = await getTransactions();
+            const data = await getTransactions(page, limit);
             if (data.transactions) {
-                setTransactionCount(data.transactions.length);
+                setTransactions(data.transactions);
                 setTreasuryBalance(data.treasuryBalance || 0);
+
+                if (data.pagination) {
+                    setTotalCount(data.pagination.totalCount);
+                    setTransactionCount(data.pagination.totalCount);
+                } else {
+                    setTransactionCount(data.transactions.length);
+                    setTotalCount(data.transactions.length);
+                }
             } else if (Array.isArray(data)) {
+                setTransactions(data);
                 setTransactionCount(data.length);
+                setTotalCount(data.length);
             }
         } catch (err) {
             console.error('Failed to fetch dashboard data', err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -69,7 +89,8 @@ const Dashboard: React.FC = () => {
                         </svg>
                     </Box>
                     <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                        Transaction Manager
+                        {/* Transaction Manager */}
+                        Money Movement
                     </Typography>
                 </Box>
                 <Button
@@ -104,10 +125,17 @@ const Dashboard: React.FC = () => {
                     <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
                         Recent Transactions
                     </Typography>
-                    <TransactionTable refreshTrigger={refreshKey} />
+                    <TransactionTable
+                        transactions={transactions}
+                        loading={loading}
+                        page={page}
+                        totalCount={totalCount}
+                        limit={limit}
+                        onPageChange={(newPage) => setPage(newPage)}
+                    />
                 </Box>
             </Box>
-            {/* <QuoteModal
+            <QuoteModal
                 open={quoteModalOpen}
                 onClose={() => setQuoteModalOpen(false)}
                 onQuoteReceived={handleQuoteReceived}
@@ -118,7 +146,7 @@ const Dashboard: React.FC = () => {
                 quote={currentQuote}
                 onSuccess={handleTransactionSuccess}
                 onBack={handleBack}
-            /> */}
+            />
         </Box>
     );
 };

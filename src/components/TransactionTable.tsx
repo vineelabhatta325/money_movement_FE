@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     Table,
     TableBody,
@@ -12,42 +12,31 @@ import {
     CircularProgress,
     Box,
     Typography,
+    TablePagination,
     Backdrop
 } from '@mui/material';
 import { ArrowForward } from '@mui/icons-material';
-import { getTransactions } from '../services/api';
+import TransactionDetailModal from './TransactionDetailModal';
 
 interface TransactionTableProps {
-    refreshTrigger?: number;
+    transactions: any[];
+    loading: boolean;
+    page: number;
+    totalCount: number;
+    limit: number;
+    onPageChange: (page: number) => void;
 }
 
-const TransactionTable: React.FC<TransactionTableProps> = ({ refreshTrigger }) => {
-    const [transactions, setTransactions] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+const TransactionTable: React.FC<TransactionTableProps> = ({
+    transactions,
+    loading,
+    page,
+    totalCount,
+    limit,
+    onPageChange
+}) => {
     const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
     const [detailModalOpen, setDetailModalOpen] = useState(false);
-
-    useEffect(() => {
-        fetchTransactions();
-    }, [refreshTrigger]);
-
-    const fetchTransactions = async () => {
-        setLoading(true);
-        try {
-            const data = await getTransactions();
-            // Handle new response structure { transactions: [], treasuryBalance: number }
-            if (data.transactions) {
-                setTransactions(data.transactions);
-            } else if (Array.isArray(data)) {
-                // Fallback for old API structure
-                setTransactions(data);
-            }
-        } catch (err) {
-            console.error('Failed to fetch transactions', err);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const getStatusColor = (status: string) => {
         switch (status.toUpperCase()) {
@@ -122,7 +111,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ refreshTrigger }) =
                                     </TableCell>
                                     <TableCell>{tx.id}</TableCell>
                                     <TableCell>
-                                        {new Date(tx.created_at).toLocaleString('en-US', {
+                                        {new Date(tx.createdAt).toLocaleString('en-US', {
                                             month: 'short',
                                             day: 'numeric',
                                             year: 'numeric',
@@ -132,8 +121,8 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ refreshTrigger }) =
                                         })}
                                     </TableCell>
                                     <TableCell>{tx.provider || 'N/A'}</TableCell>
-                                    <TableCell align="right">${tx.amount_usd}</TableCell>
-                                    <TableCell align="right">₹{tx.amount_inr}</TableCell>
+                                    <TableCell align="right">${tx.amountUsd}</TableCell>
+                                    <TableCell align="right">₹{tx.amountInr}</TableCell>
                                     <TableCell align="center">
                                         <IconButton
                                             size="small"
@@ -150,11 +139,21 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ refreshTrigger }) =
                 </Table>
             </TableContainer>
 
-            {/* <TransactionDetailModal
+            <TablePagination
+                component="div"
+                count={totalCount}
+                page={page - 1}
+                onPageChange={(_, newPage) => onPageChange(newPage + 1)}
+                rowsPerPage={limit}
+                rowsPerPageOptions={[limit]}
+                sx={{ borderTop: '1px solid #E5E7EB' }}
+            />
+
+            <TransactionDetailModal
                 open={detailModalOpen}
                 onClose={() => setDetailModalOpen(false)}
                 transaction={selectedTransaction}
-            /> */}
+            />
         </>
     );
 };

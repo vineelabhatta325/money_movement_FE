@@ -1,31 +1,25 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5002/api';
+const API_BASE_URL = 'http://localhost:5000/api';
 
-const api = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
-});
-export const getQuote = async (amountUsd: number) => {
-    const response = await api.post('/quotation', { amountUsd });
+export const getQuote = async (amount: number) => {
+    const response = await axios.post(`${API_BASE_URL}/quotation`, {
+        amountUsd: amount
+    });
     return response.data;
 };
 
 export const createTransaction = async (quoteId: string, senderId: string, bankDetails: any) => {
-    const response = await api.post('/transaction', { quoteId, senderId, bankDetails });
+    const response = await axios.post(`${API_BASE_URL}/transaction`, {
+        quoteId,
+        senderId,
+        bankDetails
+    });
     return response.data;
 };
 
-export const getTransaction = async (transactionId: string) => {
-    const response = await api.get(`/transaction/${transactionId}`);
+export const getTransactions = async (page?: number, limit?: number) => {
+    const params = page && limit ? { page, limit } : {};
+    const response = await axios.get(`${API_BASE_URL}/transactions`, { params });
     return response.data;
 };
-
-export const getTransactions = async () => {
-    const response = await api.get('/transactions');
-    return response.data;
-};
-
-export default api;
