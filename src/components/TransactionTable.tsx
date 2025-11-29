@@ -168,7 +168,13 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                                     if (!selected || selected === '') {
                                         return 'All';
                                     }
-                                    return selected === 'PENDING' ? 'Pending' : 'Completed';
+                                    const statusMap: { [key: string]: string } = {
+                                        'PENDING': 'Pending',
+                                        'PROCESSING': 'Processing',
+                                        'COMPLETED': 'Completed',
+                                        'FAILED': 'Failed'
+                                    };
+                                    return statusMap[selected] || selected;
                                 }}
                                 sx={{
                                     backgroundColor: 'white'
@@ -176,7 +182,9 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                             >
                                 <MenuItem value="">All</MenuItem>
                                 <MenuItem value="PENDING">Pending</MenuItem>
+                                <MenuItem value="PROCESSING">Processing</MenuItem>
                                 <MenuItem value="COMPLETED">Completed</MenuItem>
+                                <MenuItem value="FAILED">Failed</MenuItem>
                             </Select>
                         </FormControl>
                     </Box>

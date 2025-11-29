@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, IconButton, Typography, Box, Alert, CircularProgress, Divider, Autocomplete } from '@mui/material';
 import { Close } from '@mui/icons-material';
 import { createTransaction, getBeneficiaries } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 interface TransactionModalProps {
     open: boolean;
@@ -12,13 +13,14 @@ interface TransactionModalProps {
 }
 
 const TransactionModal: React.FC<TransactionModalProps> = ({ open, onClose, quote, onSuccess, onBack }) => {
-    const [senderId, setSenderId] = useState('');
+    const { user } = useAuth();
     const [recipientName, setRecipientName] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
     const [ifscCode, setIfscCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [beneficiaries, setBeneficiaries] = useState<any[]>([]);
+    const senderId = user?.username || 'Admin';
 
     useEffect(() => {
         if (open) {
@@ -51,18 +53,26 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ open, onClose, quot
         setRecipientName(newInputValue);
     };
 
+    const handleClose = () => {
+        setRecipientName('');
+        setAccountNumber('');
+        setIfscCode('');
+        setError(null);
+        onClose();
+    };
+
     const handleSubmit = async () => {
-        if (!senderId || !recipientName || !accountNumber || !ifscCode) {
-            setError('Please fill in all fields');
+        if (!recipientName || !accountNumber || !ifscCode) {
+            setError('Please fill in all beneficiary details');
             return;
         }
         setLoading(true);
         setError(null);
         try {
             const bankDetails = {
-                accountNumber,
-                ifscCode,
-                accountHolderName: recipientName
+                AccountNumber: accountNumber,
+                IfscCode: ifscCode,
+                AccountHolderName: recipientName
             };
             await createTransaction(quote.quoteId, senderId, bankDetails);
             onSuccess();
@@ -73,15 +83,6 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ open, onClose, quot
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleClose = () => {
-        setSenderId('');
-        setRecipientName('');
-        setAccountNumber('');
-        setIfscCode('');
-        setError(null);
-        onClose();
     };
 
     if (!quote) return null;
@@ -113,7 +114,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ open, onClose, quot
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                         <Typography variant="body2" color="text.secondary">Rate:</Typography>
-                        <Typography variant="body2" fontWeight="medium">1 USD = {quote.rateUsed} INR</Typography>
+                        <Typography variant="body2" fontWeight="medium">1 USD = {quote.RateUsed} INR</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                         <Typography variant="body2" color="text.secondary">Provider:</Typography>
@@ -121,14 +122,27 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ open, onClose, quot
                     </Box>
                 </Box>
 
+                <Divider sx={{ my: 2 }} />
+
                 <TextField
                     label="Sender ID"
                     value={senderId}
-                    onChange={(e) => setSenderId(e.target.value)}
                     fullWidth
                     margin="normal"
-                    placeholder="Your Sender ID"
+                    InputProps={{
+                        readOnly: true,
+                    }}
+                    sx={{
+                        '& .MuiInputBase-input': {
+                            backgroundColor: '#f5f5f5',
+                            cursor: 'not-allowed'
+                        }
+                    }}
                 />
+
+                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'bold' }}>
+                    Beneficiary Details
+                </Typography>
 
                 <Autocomplete
                     freeSolo

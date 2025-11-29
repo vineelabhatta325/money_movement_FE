@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Stack, Snackbar, Alert } from '@mui/material';
-import { Add, AccountBalance, Receipt } from '@mui/icons-material';
+import { Add, AccountBalance, Receipt, ReceiptLong, Logout } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import StatsCard from '../components/StatsCard';
 import TransactionTable from '../components/TransactionTable';
 import { getTransactions } from '../services/api';
 import QuoteModal from '../components/QuoteModal';
 import TransactionModal from '../components/TransactionModal';
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard: React.FC = () => {
     const [quoteModalOpen, setQuoteModalOpen] = useState(false);
@@ -123,6 +125,9 @@ const Dashboard: React.FC = () => {
         setQuoteModalOpen(true);
     };
 
+    const navigate = useNavigate();
+    const { logout } = useAuth();
+
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
@@ -145,14 +150,32 @@ const Dashboard: React.FC = () => {
                         Money Movement
                     </Typography>
                 </Box>
-                <Button
-                    variant="contained"
-                    startIcon={<Add />}
-                    onClick={handleNewTransaction}
-                    sx={{ bgcolor: '#1DB88E', '&:hover': { bgcolor: '#17A179' } }}
-                >
-                    New Transaction
-                </Button>
+                <Stack direction="row" spacing={2}>
+                    <Button
+                        variant="outlined"
+                        startIcon={<ReceiptLong />}
+                        onClick={() => navigate('/ledger')}
+                        sx={{ borderColor: '#1DB88E', color: '#1DB88E' }}
+                    >
+                        View Ledger
+                    </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        onClick={handleNewTransaction}
+                        sx={{ bgcolor: '#1DB88E', '&:hover': { bgcolor: '#17A179' } }}
+                    >
+                        New Transaction
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        startIcon={<Logout />}
+                        onClick={logout}
+                        sx={{ borderColor: '#dc3545', color: '#dc3545', '&:hover': { borderColor: '#c82333', bgcolor: 'rgba(220, 53, 69, 0.04)' } }}
+                    >
+                        Logout
+                    </Button>
+                </Stack>
             </Box>
             <Box sx={{ p: 4 }}>
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} sx={{ mb: 4 }}>
